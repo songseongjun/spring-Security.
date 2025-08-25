@@ -1,0 +1,23 @@
+spring:
+  config:
+    import:
+      optional:classpath:./secret/db.yml
+  application:
+    name: board
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    properties:
+      hibernate:
+        format_sql: true
+  thymeleaf:
+    cache: false
+  profiles:
+    include: oauth
+logging:
+  level:
+    org.springframework.security.web: trace
+    com.junlevelup: debug
+
