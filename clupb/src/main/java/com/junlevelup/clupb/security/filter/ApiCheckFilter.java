@@ -1,5 +1,6 @@
 package com.junlevelup.clupb.security.filter;
 
+import com.junlevelup.clupb.security.util.JWTUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,10 +21,12 @@ public class ApiCheckFilter extends OncePerRequestFilter {
 
   private AntPathMatcher antPathMatcher;
   private String pattern;
+  private JWTUtil jwtUtil;
 
-  public ApiCheckFilter(String pattern) {
+  public ApiCheckFilter(String pattern, JWTUtil jwtUtil) {
     this.antPathMatcher = new AntPathMatcher();
     this.pattern = pattern;
+    this.jwtUtil = jwtUtil;
   }
 
   @Override
@@ -67,10 +70,21 @@ public class ApiCheckFilter extends OncePerRequestFilter {
     boolean checkResult = false;
 
     String authHeader = request.getHeader("Authorization");
-    if (StringUtils.hasText(authHeader)){
-      log.info("Authorization exist:{}", authHeader);
-      if (authHeader.equals("12345678 ")) {
-        checkResult = true;
+//    if (StringUtils.hasText(authHeader)){
+//      log.info("Authorization exist:{}", authHeader);
+//      if (authHeader.equals("12345678 ")) {
+//        checkResult = true;
+//      }
+//    }
+    if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
+      log.info("Authoriaztion exist{}",authHeader);
+
+      try{
+        String email = jwtUtil.validateAndExtract(authHeader.substring(7));
+        log.info("validate result:{}",email);
+        checkResult = email.length() > 0;
+      }catch (Exception e){
+        e.printStackTrace();
       }
     }
     return checkResult;

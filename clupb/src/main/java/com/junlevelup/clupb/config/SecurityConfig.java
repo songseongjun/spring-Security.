@@ -4,6 +4,7 @@ package com.junlevelup.clupb.config;
 import com.junlevelup.clupb.security.filter.ApiCheckFilter;
 import com.junlevelup.clupb.security.filter.ApiLoginFilter;
 import com.junlevelup.clupb.security.handler.ClubLoginSuccessHandler;
+import com.junlevelup.clupb.security.util.JWTUtil;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,11 +27,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Log4j2
 public class SecurityConfig {
 
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
-
 
 //  @Bean
 //  public InMemoryUserDetailsManager inDetailsService() {
@@ -48,7 +44,8 @@ public class SecurityConfig {
                                          AuthenticationManager authenticationManager) throws Exception {
 
     // spring security 6이상버전에서 아래와 같이 변경
-    ApiLoginFilter apiLoginFilter = new ApiLoginFilter("/api/login");
+    ApiLoginFilter apiLoginFilter
+            = new ApiLoginFilter("/api/login",jwtUtil());
     apiLoginFilter.setAuthenticationManager(authenticationManager);
 
     http
@@ -77,6 +74,11 @@ public class SecurityConfig {
     return http.build();
   }
 
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
+
 
 
   @Bean
@@ -87,7 +89,7 @@ public class SecurityConfig {
   @Bean
   public ApiCheckFilter apiCheckFilter() {
     // /notes/ 한글자로도 있어야 합니다.
-    return new ApiCheckFilter("/notes/**/*");
+    return new ApiCheckFilter("/notes/**/*",jwtUtil());
   }
 
 
@@ -95,5 +97,10 @@ public class SecurityConfig {
   public AuthenticationManager authenticationManager
           (AuthenticationConfiguration config) throws Exception {
     return config.getAuthenticationManager();
+  }
+
+  @Bean
+  public JWTUtil jwtUtil(){
+    return new JWTUtil();
   }
 }

@@ -1,5 +1,7 @@
 package com.junlevelup.clupb.security.filter;
 
+import com.junlevelup.clupb.security.dto.ClubAuthMemberDTO;
+import com.junlevelup.clupb.security.util.JWTUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,10 +23,12 @@ import java.io.PrintWriter;
 
 @Log4j2
 public class ApiLoginFilter extends AbstractAuthenticationProcessingFilter {
+private JWTUtil jwtUtil;
 
   //public으로 사용한 이유는 securityconfig에서 사용하려고
-  public ApiLoginFilter(String defaultFilterProcessesUrl) {
+  public ApiLoginFilter(String defaultFilterProcessesUrl, JWTUtil jwtUtil) {
     super(defaultFilterProcessesUrl);
+    this.jwtUtil = jwtUtil;
   }
 
 
@@ -34,6 +38,11 @@ public class ApiLoginFilter extends AbstractAuthenticationProcessingFilter {
           throws AuthenticationException, IOException, ServletException {
     log.info("======================================");
     log.info("ApiLoginFilter attemptAuthentication");
+
+    //POST로 넘어온 것만처리하겠다
+    if (!"POST".equalsIgnoreCase(request.getMethod())){
+      throw new BadCredentialsException("Only POST requests are supported.. ");
+    }
 
     String email = request.getParameter("email");
     String password = request.getParameter("pw");
@@ -58,15 +67,31 @@ public class ApiLoginFilter extends AbstractAuthenticationProcessingFilter {
     log.info("ApiLoginFilter successfulAuthentication");
 
     //SecurityContext 생성/설정
-    SecurityContext context = SecurityContextHolder.createEmptyContext();
-    context.setAuthentication(authResult);
-    SecurityContextHolder.setContext(context);
+//    SecurityContext context = SecurityContextHolder.createEmptyContext();
+//    context.setAuthentication(authResult);
+//    SecurityContextHolder.setContext(context);
+//
+//    //세션에 저장
+//    request.getSession(true).setAttribute(HttpSessionSecurityContextRepository
+//            .SPRING_SECURITY_CONTEXT_KEY,context);
+//
+//    response.sendRedirect("/");
 
-    //세션에 저장
-    request.getSession(true).setAttribute(HttpSessionSecurityContextRepository
-            .SPRING_SECURITY_CONTEXT_KEY,context);
+    String email = ((ClubAuthMemberDTO)authResult.getPrincipal()).getUsername();
+      request.setAttribute("email", email);
 
-    response.sendRedirect("/");
+
+    String token = null;
+    try{
+      token = jwtUtil.generateToken(email);
+      response.setContentType("text/plain"); //Token은 String데이터입니다
+      response.getOutputStream().write(token.getBytes());
+
+      log.info(token);
+
+    }catch (Exception e){
+      e.printStackTrace();
+    }
   }
 
   @Override
